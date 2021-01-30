@@ -14,11 +14,6 @@ from .db_connect import get_db_data
 plt.interactive(False)
 
 
-MOC_DEPTH = 8  # equivalent to nsides=256
-
-
-
-
 def save_db_data(df, datafile='data.csv', fmt='fits'):
     if fmt.lower() == 'csv':
         # Output as CSV file
