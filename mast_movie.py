@@ -47,9 +47,12 @@ plt.rcParams.update({'font.size': 15})
 lon = np.arange(360)
 lat = np.zeros(360)
 
-MIN, MAX = [], []
+# Some initial setup
 exp_map = np.zeros(len(base_map))
+MIN, MAX = [], []
 time_range = range(0, int(max(week_bin))+1)
+
+# Main loop
 for i in time_range:
     try:
         # Get data for the week
@@ -72,6 +75,9 @@ for i in time_range:
             elif row['obs_collection'] == 'TESS':
                 pix = ptab_tess[ptab_tess['obs_id'] == row['obs_id']]
 
+            # Skip missing data (eg, bad footprints)
+            if len(pix) == 0:
+                continue
             pix = pix.iloc[0]  # in case there are duplicate rows
             exp_map[pix['ind']] = exp_map[pix['ind']] + row['t_exptime']
     except KeyError:
