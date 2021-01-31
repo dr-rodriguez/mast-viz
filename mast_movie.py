@@ -52,6 +52,7 @@ exp_map = np.zeros(len(base_map))
 MIN, MAX = [], []
 time_range = range(0, int(max(week_bin))+1)
 
+# TODO: Consider an extra loop just to spin around a bit
 # Main loop
 for i in time_range:
     try:
@@ -100,7 +101,7 @@ for i in time_range:
 
     # Make the actual plot
     hp.mollview(np.log10(smap), cmap=cmap, rot=rot_angle,
-                min=0.0, max=6.,  # exptime limits
+                min=0.0, max=7.,  # exptime limits
                 flip='geo', coord='C',
                 cbar=False, notext=True,
                 bgcolor='black', badcolor='midnightblue',
@@ -112,3 +113,4 @@ for i in time_range:
     plt.close()
 
 print("min(MIN), max(MAX) = ", min(MIN), max(MAX))
+# min(MIN), max(MAX) =  0.11 11054835.181203276
