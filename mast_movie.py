@@ -52,12 +52,18 @@ exp_map = np.zeros(len(base_map))
 MIN, MAX = [], []
 time_range = range(0, int(max(week_bin))+1)
 
+# Store some statistics with time
+time_stats = []
+
 # TODO: Consider an extra loop just to spin around a bit
 # Main loop
 for i in time_range:
+    w = time_range[i]
+    area = 0
+    obs_counts = 0
+    exp_counts = 0
     try:
         # Get data for the week
-        w = time_range[i]
         week_data = weeks.get_group(w)
         print(i, w, len(week_data))
         title = ''
@@ -81,11 +87,18 @@ for i in time_range:
                 continue
             pix = pix.iloc[0]  # in case there are duplicate rows
             exp_map[pix['ind']] = exp_map[pix['ind']] + row['t_exptime']
+            obs_counts += 1
+            area += len(pix['ind'])
+            exp_counts += row['t_exptime']
     except KeyError:
         # no data for this week
         tobj = Time(date0 + tstep*i, format='mjd')
         title = tobj.datetime.strftime('%Y-%m')
         pass
+
+    # Populate time-based stats
+    datum = {'week': w, 'date': tobj, 'area': area, 'obs_counts': obs_counts, 'exp_counts': exp_counts}
+    time_stats.append(datum)
 
     smap = exp_map.copy()
     smap = np.ma.masked_where(smap == 0, smap)
@@ -114,3 +127,7 @@ for i in time_range:
 
 print("min(MIN), max(MAX) = ", min(MIN), max(MAX))
 # min(MIN), max(MAX) =  0.11 11054835.181203276
+
+# Write out time stats
+time_df = pd.DataFrame(time_stats)
+time_df.to_csv('data/mast_time.csv', index=False)
