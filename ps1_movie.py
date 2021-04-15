@@ -1,5 +1,6 @@
 # Read the HDF5 stores and generate frames for a movie
 import matplotlib
+
 matplotlib.use('Qt5Agg')  # avoids crashing MacOS Mojave
 import numpy as np
 import pandas as pd
@@ -8,13 +9,14 @@ import copy
 from matplotlib import cm
 from astropy.time import Time
 import matplotlib.pyplot as plt
+
 plt.interactive(False)
 
 # GALEX
-rootname = 'galex'
-df = pd.read_hdf('data/galex.h5', 'data')
-ptab = pd.read_hdf('data/galex.h5', 'ptab')
-base_map = hp.read_map('data/galex_map.fits')
+rootname = 'ps1'
+df = pd.read_hdf('data/ps1.h5', 'data')
+ptab = pd.read_hdf('data/ps1.h5', 'ptab')
+base_map = hp.read_map('data/ps1_map.fits')
 
 # Min and Maximum time range
 tstep = 7.  # days
@@ -39,7 +41,7 @@ lat = np.zeros(360)
 # Some initial setup
 exp_map = np.zeros(len(base_map))
 MIN, MAX = [], []
-time_range = range(0, int(max(week_bin))+1)
+time_range = range(0, int(max(week_bin)) + 1)
 
 # Store some statistics with time
 time_stats = []
@@ -76,7 +78,7 @@ for i in time_range:
             exp_counts += row['t_exptime']
     except KeyError:
         # no data for this week
-        tobj = Time(date0 + tstep*i, format='mjd')
+        tobj = Time(date0 + tstep * i, format='mjd')
         title = tobj.datetime.strftime('%Y-%m')
         pass
 
