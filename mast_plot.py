@@ -9,8 +9,8 @@ from astropy.table import Table
 import time
 from matplotlib import cm
 import copy
-from .utils import parse_s_region, get_polygon_cdshealpix
-from .db_connect import get_db_data
+from utils import parse_s_region, get_polygon_cdshealpix
+from db_connect import get_db_data
 plt.interactive(False)
 
 
