@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 
 plt.interactive(False)
 
-# GALEX
+# PS1
+print('Loading data...')
 rootname = 'ps1'
 df = pd.read_hdf('data/ps1.h5', 'data')
 ptab = pd.read_hdf('data/ps1.h5', 'ptab')
@@ -25,6 +26,7 @@ tf = np.max(df['t_min'])
 date0 = df[df['t_min'] == t0]['t_min'].iloc[0]
 
 # Weekly bins
+print('Generating week bins...')
 week_bin = np.trunc((df['t_min'] - t0) / tstep)
 df['week_bin'] = week_bin
 weeks = df.groupby('week_bin')
@@ -45,6 +47,9 @@ time_range = range(0, int(max(week_bin)) + 1)
 
 # Store some statistics with time
 time_stats = []
+
+print('Starting image loop')
+print(f'{len(time_range)} steps to process...')
 
 # Main loop
 for i in time_range:
