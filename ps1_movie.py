@@ -55,14 +55,18 @@ print(f'{len(time_range)} steps to process...')
 resume = False
 w_resume = 0
 
-if os.path.isfile(movie_dir + 'temp_time.csv') and os.path.isfile(movie_dir + 'temp_smap.pickle'):
+# Check if this is a continuing run and re-start from there
+if os.path.isfile(movie_dir + 'temp_time.csv') and os.path.isfile(movie_dir + 'temp_expmap.npy'):
     print('Resuming from last run')
-    # Read temp_time file
-    # Convert to list of dict
-    # Get last week processed
-    w_resume = 0 # set this
+
+    # Read temp_time file, convert to a list of dictionaries, and get the maximum week processed
+    temp_time = pd.read_csv(movie_dir + 'temp_time.csv')
+    time_stats = temp_time.to_dict('records')
+    w_resume = temp_time['week'].max()
     
     # Read temp_smap file
+    exp_map = np.load(movie_dir + 'temp_expmap.npy')
+
     resume = True
 
 # Main loop
@@ -70,7 +74,7 @@ for i in time_range:
     w = time_range[i]
     
     # Resume after the last processed week
-    if resume and w > w_resume:
+    if resume and w <= w_resume:
         continue
         
     area = 0
@@ -78,7 +82,7 @@ for i in time_range:
     exp_counts = 0
     try:
         week_data = weeks.get_group(w)
-        print(i, w, len(week_data))  # TODO: add time stamp here
+        print(i, w, len(week_data), Time.now())
         title = ''
         for _, row in week_data.iterrows():
             # Get the time for the plot title
@@ -135,11 +139,10 @@ for i in time_range:
     plt.savefig(pngfile1, dpi=300)
     plt.close()
 
-    # TODO: add temporary save of time_stats and smap to be able to resume processing (can use week number to skip)
-    # Save time_stats to temp_time.csv
+    # Temporary save of time_stats and exp_map to be able to resume processing
     time_df = pd.DataFrame(time_stats)
     time_df.to_csv(movie_dir + 'temp_time.csv', index=False)
-    # Save smap to temp_smap.pickle
+    np.save(movie_dir + 'temp_expmap.npy', exp_map)
 
 print("min(MIN), max(MAX) = ", min(MIN), max(MAX))
 
