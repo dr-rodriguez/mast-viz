@@ -2,6 +2,7 @@
 import matplotlib
 
 matplotlib.use('Qt5Agg')  # avoids crashing MacOS Mojave
+import os
 import numpy as np
 import pandas as pd
 import healpy as hp
@@ -15,6 +16,7 @@ plt.interactive(False)
 # PS1
 print('Loading data...')
 rootname = 'ps1'
+movie_dir = 'movie/ps1/'
 df = pd.read_hdf('data/ps1.h5', 'data')
 ptab = pd.read_hdf('data/ps1.h5', 'ptab')
 base_map = hp.read_map('data/ps1_map.fits')
@@ -50,16 +52,33 @@ time_stats = []
 
 print('Starting image loop')
 print(f'{len(time_range)} steps to process...')
+resume = False
+w_resume = 0
+
+if os.path.isfile(movie_dir + 'temp_time.csv') and os.path.isfile(movie_dir + 'temp_smap.pickle'):
+    print('Resuming from last run')
+    # Read temp_time file
+    # Convert to list of dict
+    # Get last week processed
+    w_resume = 0 # set this
+    
+    # Read temp_smap file
+    resume = True
 
 # Main loop
 for i in time_range:
     w = time_range[i]
+    
+    # Resume after the last processed week
+    if resume and w > w_resume:
+        continue
+        
     area = 0
     obs_counts = 0
     exp_counts = 0
     try:
         week_data = weeks.get_group(w)
-        print(i, w, len(week_data))
+        print(i, w, len(week_data))  # TODO: add time stamp here
         title = ''
         for _, row in week_data.iterrows():
             # Get the time for the plot title
@@ -112,9 +131,15 @@ for i in time_range:
                 norm='linear', xsize=1000, title=title)
     hp.projplot(lon, lat, 'r', lonlat=True, coord='G')
     hp.graticule(dpar=45., dmer=30., coord='C', color='lightgray')
-    pngfile1 = 'movie/ps1/' + rootname + f'_frame{i:06d}.png'
+    pngfile1 = movie_dir + rootname + f'_frame{i:06d}.png'
     plt.savefig(pngfile1, dpi=300)
     plt.close()
+
+    # TODO: add temporary save of time_stats and smap to be able to resume processing (can use week number to skip)
+    # Save time_stats to temp_time.csv
+    time_df = pd.DataFrame(time_stats)
+    time_df.to_csv(movie_dir + 'temp_time.csv', index=False)
+    # Save smap to temp_smap.pickle
 
 print("min(MIN), max(MAX) = ", min(MIN), max(MAX))
 
