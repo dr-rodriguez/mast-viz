@@ -55,9 +55,10 @@ plt.close()
 # Notable dates: 1997 for STIS and NICMOS, 2002 for ACS, 2009 for WFC3
 
 # Sound
+frame_rate = 20.  # note spacing will be 1/frame_rate
 sonidf = SoniSeries(t, time_col='week', val_col='area')
 print(sonidf.pitch_mapper.pitch_map_args)  # check parameters
-sonidf.note_spacing = 0.05  # median seconds between notes; default is 0.01; my video uses 20 frames/sec
+sonidf.note_spacing = 1/frame_rate  # median seconds between notes; default is 0.01; my video uses 20 frames/sec
 sonidf.pitch_mapper.pitch_map_args["stretch"] = "log"  # or linear
 # sonidf.pitch_mapper.pitch_map_args["center_pitch"] = 800  # overall higher pitch
 sonidf.sonify()
@@ -66,13 +67,13 @@ sonidf.stop()
 sonidf.write("movie/mast_logarea.wav")
 
 sonidf = SoniSeries(t, time_col='week', val_col='obs_counts')
-sonidf.note_spacing = 0.05
+sonidf.note_spacing = 1/frame_rate
 sonidf.sonify()
 sonidf.write("movie/mast_counts.wav")
 
 sonidf = SoniSeries(t, time_col='week', val_col='exp_counts')
 # sonidf.pitch_mapper.pitch_map_args["stretch"] = "log"
-sonidf.note_spacing = 0.05
+sonidf.note_spacing = 1/frame_rate
 sonidf.sonify()
 sonidf.write("movie/mast_exptime.wav")
 
