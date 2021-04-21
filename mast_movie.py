@@ -13,19 +13,21 @@ plt.interactive(False)
 
 # MAST
 print('Loading data...')
-rootname = 'mast'
-movie_dir = 'movie/mast/'
+rootname = 'mast_wk2'
+movie_dir = 'movie/mast_wk2/'
 df1 = pd.read_hdf('data/galex.h5', 'data')
 df2 = pd.read_hdf('data/hst.h5', 'data')
 df3 = pd.read_hdf('data/tess.h5', 'data')
+df4 = pd.read_hdf('data/kepler.h5', 'data')  # just K2 technically
 
-df = pd.concat([df1, df2, df3])
+df = pd.concat([df1, df2, df3, df4])
 df = df.reset_index()
 
 # Individual coverage
 ptab_galex = pd.read_hdf('data/galex.h5', 'ptab')
 ptab_hst = pd.read_hdf('data/hst.h5', 'ptab')
 ptab_tess = pd.read_hdf('data/tess.h5', 'ptab')
+ptab_k2 = pd.read_hdf('data/kepler.h5', 'ptab')
 
 base_map = hp.read_map('data/galex_map.fits')
 
@@ -37,6 +39,7 @@ date0 = df[df['t_min'] == t0]['t_min'].iloc[0]
 # TODO: While doing this I realized there is an incorrect date for an HST observation (launched in April 1990)
 
 # Weekly bins
+print('Generating week bins...')
 week_bin = np.trunc((df['t_min'] - t0) / tstep)
 df['week_bin'] = week_bin
 weeks = df.groupby('week_bin')
@@ -108,6 +111,8 @@ for i in time_range:
                 pix = ptab_hst[ptab_hst['obs_id'] == row['obs_id']]
             elif row['obs_collection'] == 'TESS':
                 pix = ptab_tess[ptab_tess['obs_id'] == row['obs_id']]
+            elif row['obs_collection'] == 'K2':
+                pix = ptab_k2[ptab_tess['obs_id'] == row['obs_id']]
 
             # Skip missing data (eg, bad footprints)
             if len(pix) == 0:
