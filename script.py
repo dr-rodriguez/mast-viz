@@ -21,7 +21,7 @@ from mast_plot import *
 # Get from DB
 df = get_db_data(mission='HST', limit=None,
                   constraints="AND dataproduct_type='image' AND provenance_name!='HAP' ",
-                  server='mastdbtest', db='CAOMv230ProdSync')
+                  server='mastdbtest', db='CAOMv240ProdSync')
 
 # Using HDF5 to handle the complex data storage without using CSV/FITS (except for the map)
 store = pd.HDFStore("data/hst.h5")
@@ -45,8 +45,8 @@ make_plot(hp_map, outfile='image/mast_hst_map.png', title='HST')
 
 # region TESS
 df = get_db_data(mission='TESS', limit=None,
-                 constraints="AND dataproduct_type='image' AND sequence_number < 32 ",
-                 server='mastdbtest', db='CAOMv230ProdSync')
+                 constraints="AND dataproduct_type='image' ",
+                 server='mastdbtest', db='CAOMv240ProdSync')
 
 # Using HDF5 to handle the complex data storage without using CSV/FITS (except for the map)
 store = pd.HDFStore("data/tess.h5")
