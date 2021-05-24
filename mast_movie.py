@@ -7,27 +7,30 @@ import pandas as pd
 import healpy as hp
 import copy
 from matplotlib import cm
+from matplotlib.colors import LinearSegmentedColormap
 from astropy.time import Time
 import matplotlib.pyplot as plt
 plt.interactive(False)
 
 # MAST
 print('Loading data...')
-rootname = 'mast_wk2'
-movie_dir = 'movie/mast_wk2/'
+rootname = 'mast_v3'
+movie_dir = 'movie/mast_v3/'
+HIGHLIGHTS = True
+
 df1 = pd.read_hdf('data/galex.h5', 'data')
 df2 = pd.read_hdf('data/hst.h5', 'data')
 df3 = pd.read_hdf('data/tess.h5', 'data')
-df4 = pd.read_hdf('data/kepler.h5', 'data')  # just K2 technically
+# df4 = pd.read_hdf('data/kepler.h5', 'data')  # just K2 technically
 
-df = pd.concat([df1, df2, df3, df4])
+df = pd.concat([df1, df2, df3])
 df = df.reset_index()
 
 # Individual coverage
 ptab_galex = pd.read_hdf('data/galex.h5', 'ptab')
 ptab_hst = pd.read_hdf('data/hst.h5', 'ptab')
 ptab_tess = pd.read_hdf('data/tess.h5', 'ptab')
-ptab_k2 = pd.read_hdf('data/kepler.h5', 'ptab')
+# ptab_k2 = pd.read_hdf('data/kepler.h5', 'ptab')
 
 base_map = hp.read_map('data/galex_map.fits')
 
@@ -46,9 +49,14 @@ weeks = df.groupby('week_bin')
 
 # Plotting setup
 plt.style.use('dark_background')
+# Color map for exposure
 cmap = copy.copy(cm.get_cmap('cividis'))
 cmap.set_bad('xkcd:charcoal')
 cmap.set_under('k')
+# Color "map" for highlights:
+color_array = np.array([[240./256., 199./256., 36./256., 0],  # RGBA, A=0 is transparent
+                        [240./256., 199./256., 36./256., 1]])
+highlight_cmap = LinearSegmentedColormap.from_list(name='highlight', colors=color_array)
 plt.rcParams.update({'font.size': 15})
 lon = np.arange(360)
 lat = np.zeros(360)
@@ -92,6 +100,7 @@ for i in time_range:
     area = 0
     obs_counts = 0
     exp_counts = 0
+    highlights = np.zeros(len(base_map))  # reset highlights map
     try:
         # Get data for the week
         week_data = weeks.get_group(w)
@@ -111,8 +120,8 @@ for i in time_range:
                 pix = ptab_hst[ptab_hst['obs_id'] == row['obs_id']]
             elif row['obs_collection'] == 'TESS':
                 pix = ptab_tess[ptab_tess['obs_id'] == row['obs_id']]
-            elif row['obs_collection'] == 'K2':
-                pix = ptab_k2[ptab_tess['obs_id'] == row['obs_id']]
+            # elif row['obs_collection'] == 'K2':
+            #     pix = ptab_k2[ptab_tess['obs_id'] == row['obs_id']]
 
             # Skip missing data (eg, bad footprints)
             if len(pix) == 0:
@@ -120,6 +129,7 @@ for i in time_range:
 
             pix = pix.iloc[0]  # in case there are duplicate rows
             exp_map[pix['ind']] = exp_map[pix['ind']] + row['t_exptime']
+            highlights[pix['ind']] = exp_map[pix['ind']] + 1  # for highlighting recent additions
 
             obs_counts += 1
             area += len(pix['ind'])
@@ -147,12 +157,29 @@ for i in time_range:
     rot_angle = (i % 360) - 180
 
     # Make the actual plot
+    fig = plt.figure(1, figsize=(8.5, 5.4))
     hp.mollview(np.log10(smap), cmap=cmap, rot=rot_angle,
                 min=0.0, max=7.,  # exptime limits
                 flip='geo', coord='C',
                 cbar=False, notext=True,
                 bgcolor='black', badcolor='midnightblue',
-                norm='linear', xsize=1000, title=title)
+                norm='linear', xsize=1000, title=title,
+                fig=1)
+
+    if HIGHLIGHTS:
+        # Highlight new observations this week
+        hmap = highlights.copy()
+        hmap = np.ma.masked_where(hmap == 0, hmap)
+        hmap.set_fill_value(np.nan)
+
+        hp.mollview(np.log10(hmap), cmap=highlight_cmap, rot=rot_angle,
+                    min=0.0, max=1.0,
+                    flip='geo', coord='C',
+                    cbar=False, notext=True,
+                    bgcolor=[0., 0., 0., 0.], badcolor=[0., 0., 0., 0.],  # fully transparent colors
+                    norm='linear', xsize=1000, title=title,
+                    reuse_axes=True, fig=1)
+
     hp.projplot(lon, lat, 'r', lonlat=True, coord='G')
     hp.graticule(dpar=45., dmer=30., coord='C', color='lightgray')
     pngfile1 = movie_dir + rootname + f'_frame{i:06d}.png'
