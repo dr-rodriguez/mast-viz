@@ -14,9 +14,12 @@ plt.interactive(False)
 
 # MAST
 print('Loading data...')
-rootname = 'mast_v3'
-movie_dir = 'movie/mast_v3/'
-HIGHLIGHTS = True
+rootname = 'mast_v4'
+movie_dir = 'movie/mast_v4/'
+HIGHLIGHTS = True  # flag for flashing new observations as they are added
+GALACTIC_LINE = False  # flag for enabling red galactic line
+SKYCOLOR = '#003B4D'  # MAST darkest turquoise
+# SKYCOLOR = 'midnightblue'
 
 df1 = pd.read_hdf('data/galex.h5', 'data')
 df2 = pd.read_hdf('data/hst.h5', 'data')
@@ -51,11 +54,15 @@ weeks = df.groupby('week_bin')
 plt.style.use('dark_background')
 # Color map for exposure
 cmap = copy.copy(cm.get_cmap('cividis'))
-cmap.set_bad('xkcd:charcoal')
+# cmap.set_bad('xkcd:charcoal')
+cmap.set_bad(SKYCOLOR)
 cmap.set_under('k')
 # Color "map" for highlights:
-color_array = np.array([[240./256., 199./256., 36./256., 0],  # RGBA, A=0 is transparent
-                        [240./256., 199./256., 36./256., 1]])
+# color_array = np.array([[240./256., 199./256., 36./256., 0],  # RGBA, A=0 is transparent
+#                         [240./256., 199./256., 36./256., 1]])
+# MAST Orange C75109 (199 81 9)
+color_array = np.array([[199./256., 81./256., 9./256., 0],  # RGBA, A=0 is transparent
+                        [199./256., 81./256., 9./256., 1]])
 highlight_cmap = LinearSegmentedColormap.from_list(name='highlight', colors=color_array)
 plt.rcParams.update({'font.size': 15})
 lon = np.arange(360)
@@ -162,7 +169,7 @@ for i in time_range:
                 min=0.0, max=7.,  # exptime limits
                 flip='geo', coord='C',
                 cbar=False, notext=True,
-                bgcolor='black', badcolor='midnightblue',
+                bgcolor='black', badcolor=SKYCOLOR,
                 norm='linear', xsize=1000, title=title,
                 fig=1)
 
@@ -180,8 +187,14 @@ for i in time_range:
                     norm='linear', xsize=1000, title=title,
                     reuse_axes=True, fig=1)
 
-    hp.projplot(lon, lat, 'r', lonlat=True, coord='G')
+    # Galatic line
+    if GALACTIC_LINE:
+        hp.projplot(lon, lat, 'r', lonlat=True, coord='G')
+
+    # Grid
     hp.graticule(dpar=45., dmer=30., coord='C', color='lightgray')
+
+    # Output file
     pngfile1 = movie_dir + rootname + f'_frame{i:06d}.png'
     plt.savefig(pngfile1, dpi=300)
     plt.close()
