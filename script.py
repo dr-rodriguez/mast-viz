@@ -94,7 +94,7 @@ make_plot(hp_map, outfile='image/mast_galex_map.png', title='GALEX')
 # region PS1
 df = get_db_data(mission='PS1', limit=None,
                  constraints="AND dataproduct_type='image' AND calib_level=3 ",
-                 server='mastdbtest', db='CAOMv230ProdSync')
+                 server='mastdbtest', db='CAOMv240ProdSync')
 
 # Using HDF5 to handle the complex data storage without using CSV/FITS (except for the map)
 store = pd.HDFStore("data/ps1.h5")
@@ -123,7 +123,7 @@ make_plot(hp_map, outfile='image/mast_ps1_map.png', title='PS1')
 #                  server='mastdbtest', db='CAOMv230ProdSync')
 df = get_db_data(mission='K2', limit=None,
                  constraints="AND dataproduct_type='image' AND calib_level=3 ",
-                 server='mastdbtest', db='CAOMv230ProdSync')
+                 server='mastdbtest', db='CAOMv240ProdSync')
 
 # df = pd.concat([df1, df2])
 
@@ -143,6 +143,28 @@ hp_map = read_map(mapfile='data/kepler_map.fits')
 store.close()
 
 make_plot(hp_map, outfile='image/mast_kepler_map.png', title='K2')
+# endregion
+
+# region JWST
+df = get_db_data(mission='JWST', limit=None,
+                 server='mastdbtest', db='CAOMv240ProdSync')
+
+# Using HDF5 to handle the complex data storage without using CSV/FITS (except for the map)
+store = pd.HDFStore("data/jwst.h5")
+store['data'] = df
+
+# Get from the HDF5 rather than DB
+# df = pd.read_hdf("data/ps1.h5", "data")
+
+hp_map, ptab = make_map(df)
+
+store['ptab'] = ptab
+output_map(hp_map, outfile='data/jwst_map.fits')  # in FITS format
+
+hp_map = read_map(mapfile='data/jwst_map.fits')
+store.close()
+
+make_plot(hp_map, outfile='image/mast_jwst_map.png', title='JWST')
 # endregion
 
 # Testing changes
