@@ -146,7 +146,7 @@ def read_map(mapfile):
     return hp.read_map(mapfile)
 
 
-def make_plot(hp_map, outfile='mast_map.png', title=''):
+def make_plot(hp_map, outfile='mast_map.png', title='', grids=True):
     # Generate the map
 
     # pngfile1 = os.path.splitext(outfile)[0] + '_300.png'
@@ -174,8 +174,11 @@ def make_plot(hp_map, outfile='mast_map.png', title=''):
                 bgcolor='black', badcolor='gray',
                 norm='linear',
                 xsize=1000)
-    hp.projplot(lon, lat, 'r', lonlat=True, coord='G')
-    hp.graticule(dpar=45., dmer=30., coord='C', color='white')
+
+    if grids:
+        hp.projplot(lon, lat, 'r', lonlat=True, coord='G')
+        hp.graticule(dpar=45., dmer=30., coord='C', color='white')
+
     # plt.savefig(pngfile1, dpi=300)
     plt.savefig(pngfile2, dpi=600)
 

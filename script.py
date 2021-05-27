@@ -165,6 +165,7 @@ hp_map = read_map(mapfile='data/jwst_map.fits')
 store.close()
 
 make_plot(hp_map, outfile='image/mast_jwst_map.png', title='JWST')
+make_plot(hp_map, outfile='image/mast_jwst_map_v2.png', title='JWST', grids=False)
 # endregion
 
 # Testing changes
