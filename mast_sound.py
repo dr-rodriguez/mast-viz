@@ -10,7 +10,7 @@ from astronify.series import SoniSeries
 plt.interactive(False)
 
 # Read the data
-df = pd.read_csv('data/mast_time.csv')
+df = pd.read_csv('data/mast_v4_time.csv')
 t = Table.from_pandas(df)
 t['year'] = [x.datetime.strftime('%Y-%m') for x in Time(t['date'], format='mjd')]
 
@@ -23,6 +23,7 @@ plt.plot(t['year'], t['area'])  # area on sky over time
 plt.xticks(rotation=90)
 ax = plt.gca()
 ax.set_xticks(ax.get_xticks()[::10])
+ax.set_ylabel('Area Covered Per Week')
 plt.tight_layout()
 plt.savefig('image/mast_area.png', dpi=300)
 plt.close()
@@ -31,6 +32,7 @@ plt.plot(t['year'], np.log10(t['area']))  # area on sky over time
 plt.xticks(rotation=90)
 ax = plt.gca()
 ax.set_xticks(ax.get_xticks()[::10])
+ax.set_ylabel('Log Area Covered Per Week')
 plt.tight_layout()
 plt.savefig('image/mast_logarea.png', dpi=300)
 plt.close()
@@ -39,6 +41,7 @@ plt.plot(t['year'], t['exp_counts'])  # exposure time over time
 plt.xticks(rotation=90)
 ax = plt.gca()
 ax.set_xticks(ax.get_xticks()[::10])
+ax.set_ylabel('Exopsure Time Per Week')
 plt.tight_layout()
 plt.savefig('image/mast_exptime.png', dpi=300)
 plt.close()
@@ -47,6 +50,7 @@ plt.plot(t['year'], t['obs_counts'])  # observation counts over time
 plt.xticks(rotation=90)
 ax = plt.gca()
 ax.set_xticks(ax.get_xticks()[::10])
+ax.set_ylabel('Observations Added Per Week')
 plt.tight_layout()
 plt.savefig('image/mast_counts.png', dpi=300)
 plt.close()
