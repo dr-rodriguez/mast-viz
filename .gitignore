@@ -1,0 +1,7 @@
+movie/*
+.idea
+.vs
+.vscode
+__pycache__
+data/*
+odbc.ini
