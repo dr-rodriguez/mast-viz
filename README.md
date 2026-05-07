@@ -34,3 +34,4 @@ Refer to the script movie/movie_script.sh to see how to call ffmpeg to generate 
 # Generate Sonifications
 
 Refer to mast_sound.py to see how to generate the sonifications.
+This will require the astronify package and extra setup. See https://astronify.readthedocs.io/en/latest/astronify/install.html
