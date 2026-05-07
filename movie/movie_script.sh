@@ -1,7 +1,7 @@
 # Scripts to generate quick movies with ffmpeg
 
 # GALEX
-~/Software/ffmpeg -r 10 -i ./galex/galex_frame%06d.png -vcodec mpeg4 -q:v 3 -y galex.mp4
+~/Software/ffmpeg -r 20 -i ./galex/galex_frame%06d.png -vcodec mpeg4 -q:v 3 -y galex.mp4
 
 # PS1
 ~/Software/ffmpeg -r 10 -i ./ps1/ps1_frame%06d.png -vcodec mpeg4 -q:v 3 -y ps1.mp4
