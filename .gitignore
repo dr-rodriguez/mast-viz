@@ -5,3 +5,6 @@ movie/*
 __pycache__
 data/*
 odbc.ini
+.venv/
+.vscode/
+uv.lock
