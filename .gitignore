@@ -8,3 +8,4 @@ odbc.ini
 .venv/
 .vscode/
 uv.lock
+.env

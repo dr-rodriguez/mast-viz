@@ -1,6 +1,6 @@
 # Use astronify to make sound of the MAST data
 import matplotlib
-matplotlib.use('Qt5Agg')  # avoids crashing MacOS Mojave
+matplotlib.use('Agg')  # avoids crashing MacOS Mojave
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
