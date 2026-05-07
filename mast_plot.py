@@ -112,7 +112,7 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
 
             # Populate output lists
             try:
-                hp_map[ipix] = hp_map[ipix] + np.float(row[exp_col])  # adding up exposures for that healpix pixel
+                hp_map[ipix] = hp_map[ipix] + float(row[exp_col])  # adding up exposures for that healpix pixel
 
                 p_dict = {
                     "i": i,

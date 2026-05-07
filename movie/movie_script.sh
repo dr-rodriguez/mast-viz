@@ -9,5 +9,8 @@
 # JWST
 ~/Software/ffmpeg -r 10 -i ./jwst/jwst_frame%06d.png -vcodec mpeg4 -q:v 3 -y jwst.mp4
 
+# TESS
+~/Software/ffmpeg -r 20 -i ./tess/tess_frame%06d.png -vcodec mpeg4 -q:v 3 -y tess.mp4
+
 # MAST
 ~/Software/ffmpeg -r 20 -i ./mast/mast_frame%06d.png -vcodec mpeg4 -q:v 3 -y mast.mp4

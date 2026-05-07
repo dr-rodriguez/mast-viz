@@ -12,17 +12,17 @@ import matplotlib.pyplot as plt
 plt.interactive(False)
 
 # GALEX
-movie_dir = 'movie/galex/'
-rootname = 'galex'
+movie_dir = 'movie/tess/'
+rootname = 'tess'
 DPI=100  # 300 is default
-HIGHLIGHTS = True  # flag for flashing new observations as they are added
+HIGHLIGHTS = False  # flag for flashing new observations as they are added
 GALACTIC_LINE = False  # flag for enabling red galactic line
 GALACTIC_GRID = True  # flag for enabling galactic grid
 SKYCOLOR = '#003B4D'  # MAST darkest turquoise
 
-df = pd.read_hdf('data/galex.h5', 'data')
-ptab = pd.read_hdf('data/galex.h5', 'ptab')
-base_map = hp.read_map('data/galex_map.fits')
+df = pd.read_hdf('data/tess.h5', 'data')
+ptab = pd.read_hdf('data/tess.h5', 'ptab')
+base_map = hp.read_map('data/tess_map.fits')
 
 # Min and Maximum time range
 tstep = 7.  # days
