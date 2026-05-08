@@ -212,6 +212,32 @@ make_plot(hp_map, outfile="image/mast_jwst_map.png", title="JWST")
 make_plot(hp_map, outfile="image/mast_jwst_map_v2.png", title="JWST", grids=False)
 # endregion
 
+# region SDSS
+df = get_db_data(mission="SDSS", limit=None, constraints="AND dataproduct_type='image' ")
+
+# Drop erronous date
+bad_tmin = 40587  # 1970, this is a bug in the values
+df = df[df['t_min'] != bad_tmin]
+
+# Using HDF5 to handle the complex data storage without using CSV/FITS (except for the map)
+store = pd.HDFStore("data/sdss.h5")
+store["data"] = df
+
+# Get from the HDF5 rather than DB
+df = pd.read_hdf("data/sdss.h5", "data")
+
+hp_map, ptab = make_map(df)
+
+store["ptab"] = ptab
+output_map(hp_map, outfile="data/sdss_map.fits")  # in FITS format
+
+hp_map = read_map(mapfile="data/sdss_map.fits")
+store.close()
+
+make_plot(hp_map, outfile="image/mast_sdss_map.png", title="SDSS")
+
+# endregion
+
 # Testing changes
 df = read_file_data("data/tess_data.csv", fmt="pandas")
 hp_map, ptab = make_map(df)

@@ -150,18 +150,18 @@ def read_map(mapfile):
     return hp.read_map(mapfile)
 
 
-def make_plot(hp_map, outfile="mast_map.png", title="", grids=True):
+def make_plot(hp_map, outfile="mast_map.png", title="", dpi=600, grids=True):
     # Generate the map
 
-    # pngfile1 = os.path.splitext(outfile)[0] + '_300.png'
-    pngfile2 = os.path.splitext(outfile)[0] + "_600.png"
+    SKYCOLOR = '#003B4D'  # MAST darkest turquoise
+
+    pngfile2 = os.path.splitext(outfile)[0] + f"_{dpi}.png"
 
     # Plot options
     plt.style.use("dark_background")
     cmap = copy.copy(cm.get_cmap("cividis"))
-    # cmap.set_under('w')
-    cmap.set_bad("xkcd:charcoal")
-    cmap.set_under("navy")
+    cmap.set_bad(SKYCOLOR)
+    cmap.set_under('k')
 
     plt.rcParams.update({"font.size": 15})
     lon = np.arange(360)
@@ -180,7 +180,7 @@ def make_plot(hp_map, outfile="mast_map.png", title="", grids=True):
         notext=True,
         title=title,
         bgcolor="black",
-        badcolor="gray",
+        badcolor=SKYCOLOR,
         norm="linear",
         xsize=1000,
     )
@@ -189,7 +189,6 @@ def make_plot(hp_map, outfile="mast_map.png", title="", grids=True):
         hp.projplot(lon, lat, "r", lonlat=True, coord="G")
         hp.graticule(dpar=45.0, dmer=30.0, coord="C", color="white")
 
-    # plt.savefig(pngfile1, dpi=300)
-    plt.savefig(pngfile2, dpi=600)
+    plt.savefig(pngfile2, dpi=dpi)
 
     plt.close()

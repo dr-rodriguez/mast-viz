@@ -12,5 +12,8 @@
 # TESS
 ~/Software/ffmpeg -r 20 -i ./tess/tess_frame%06d.png -vcodec mpeg4 -q:v 3 -y tess.mp4
 
+# SDSS
+~/Software/ffmpeg -r 20 -i ./sdss/sdss_frame%06d.png -vcodec mpeg4 -q:v 3 -y sdss.mp4
+
 # MAST
 ~/Software/ffmpeg -r 20 -i ./mast/mast_frame%06d.png -vcodec mpeg4 -q:v 3 -y mast.mp4
