@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import healpy as hp
 import copy
-from matplotlib import cm
+from matplotlib import colormaps
 from matplotlib.colors import LinearSegmentedColormap
 from astropy.time import Time
 import matplotlib.pyplot as plt
@@ -37,7 +37,7 @@ weeks = df.groupby('week_bin')
 
 # Plotting setup
 plt.style.use('dark_background')
-cmap = copy.copy(cm.get_cmap('cividis'))
+cmap = copy.copy(colormaps['cividis'])
 # cmap.set_bad('xkcd:charcoal')
 cmap.set_bad(SKYCOLOR)
 cmap.set_under('k')
@@ -69,7 +69,7 @@ for i in time_range:
     highlights = np.zeros(len(base_map))  # reset highlights map
     try:
         week_data = weeks.get_group(w)
-        print(i, w, len(week_data))
+        print(i, w, len(time_range), len(week_data))
         title = ''
         for _, row in week_data.iterrows():
             # Get the time for the plot title
