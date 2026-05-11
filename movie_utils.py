@@ -62,7 +62,7 @@ def save_resume_state(movie_dir, time_stats, exp_map):
 
 def plot_frame(smap, rot_angle, title, cmap, skycolor, highlights_map, highlight_cmap, 
                highlights, galactic_line, galactic_grid, movie_dir, rootname, i, dpi):
-    fig = plt.figure(1, figsize=(8.5, 5.4))
+    _ = plt.figure(1, figsize=(8.5, 5.4))
     
     # Use np.ma.log10 for masked arrays or np.log10 if not masked
     if hasattr(smap, 'mask'):
@@ -158,6 +158,7 @@ def generate_movie(df, ptab, base_map, rootname, movie_dir,
                 exp_map = e_map
 
     MIN, MAX = [], []
+    tobj = None
     
     print('Starting image loop')
     print(f'{len(time_range)} steps to process...')
