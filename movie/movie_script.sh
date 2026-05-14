@@ -7,7 +7,7 @@
 ~/Software/ffmpeg -r 10 -i ./ps1/ps1_frame%06d.png -vcodec mpeg4 -q:v 3 -y ps1.mp4
 
 # JWST
-~/Software/ffmpeg -r 10 -i ./jwst/jwst_frame%06d.png -vcodec mpeg4 -q:v 3 -y jwst.mp4
+~/Software/ffmpeg -r 20 -i ./jwst/jwst_frame%06d.png -vcodec mpeg4 -q:v 3 -y jwst.mp4
 
 # TESS
 ~/Software/ffmpeg -r 20 -i ./tess/tess_frame%06d.png -vcodec mpeg4 -q:v 3 -y tess.mp4
