@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 from db_connect import get_db_data
-from mast_plot import make_plot, make_map
+from mast_plot import make_plot, make_map, output_map, read_map
 
 # --- MISSION CONFIGURATION ---
 # Tweak these variables for a single mission run. 
@@ -71,7 +71,9 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
     make_plots = make_plots if make_plots is not None else MAKE_PLOTS
     
     h5_path = os.path.join(data_dir, f"{mission.lower()}.h5")
+    fits_path = os.path.join(data_dir, f"{mission.lower()}_map.fits")
     df = None
+    hp_map = None
     
     # Try to load from HDF5 if not querying fresh
     if not query_fresh and os.path.exists(h5_path):
@@ -82,8 +84,19 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
                     df = store['data']
                 else:
                     print(f"'data' key not found in {h5_path}. Fetching from DB.")
+                
+                if 'ptab' in store:
+                    ptab = store['ptab']
+                    print(f"Loaded ptab for {mission} from cache.")
         except Exception as e:
             print(f"Error reading HDF5 for {mission}: {e}. Falling back to DB.")
+
+    if df is not None and hp_map is None and os.path.exists(fits_path):
+        try:
+            hp_map = read_map(fits_path)
+            print(f"Loaded map for {mission} from {fits_path}")
+        except Exception as e:
+            print(f"Error reading FITS map for {mission}: {e}")
 
     if df is None:
         # Fetch from database
@@ -98,18 +111,43 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
             # Remove data before 1990
             df = df[df['t_min'] >= 48005.]
 
+        # Generate HEALPix map and pixel table (ptab)
+        print(f"Generating map and ptab for {mission}...")
+        hp_map, ptab = make_map(df)
+
         # Save to HDF5 (always update cache when fetching fresh or if cache was missing)
-        print(f"Saving data for {mission} to {h5_path}")
+        print(f"Saving data and ptab for {mission} to {h5_path}")
         os.makedirs(data_dir, exist_ok=True)
         try:
             with pd.HDFStore(h5_path, mode='a') as store:
                 store["data"] = df
+                store["ptab"] = ptab
+            
+            # Save the HEALPix map to a FITS file
+            print(f"Saving map for {mission} to {fits_path}")
+            output_map(hp_map, outfile=fits_path)
         except Exception as e:
-            print(f"Error saving to HDF5: {e}")
+            print(f"Error saving data for {mission}: {e}")
+    else:
+        # df was loaded from cache. Check if ptab and fits map also exist.
+        if ptab is None or hp_map is None:
+             print(f"Map or ptab missing from cache for {mission}, generating...")
+             hp_map, ptab = make_map(df)
+             try:
+                 with pd.HDFStore(h5_path, mode='a') as store:
+                     store["ptab"] = ptab
+                 output_map(hp_map, outfile=fits_path)
+             except Exception as e:
+                 print(f"Error updating map/ptab for {mission}: {e}")
 
     if make_plots:
         print(f"Generating plot for {mission}...")
-        hp_map, _ = make_map(df)
+        if hp_map is None:
+            if os.path.exists(fits_path):
+                hp_map = read_map(fits_path)
+            else:
+                hp_map, _ = make_map(df)
+        
         plot_path = os.path.join("image", f"mast_{mission.lower()}_map.png")
         os.makedirs("image", exist_ok=True)
         make_plot(hp_map, outfile=plot_path, title=mission)
