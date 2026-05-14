@@ -9,7 +9,7 @@ import os
 from astropy.table import Table
 from matplotlib import cm
 import copy
-from .utils.utils import parse_s_region, get_polygon_cdshealpix
+from mast_viz.utils.utils import parse_s_region, get_polygon_cdshealpix
 
 plt.interactive(False)
 

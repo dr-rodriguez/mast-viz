@@ -3,7 +3,7 @@ import matplotlib
 matplotlib.use('Agg')
 import pandas as pd
 import healpy as hp
-from .utils import movie_utils
+from mast_viz.utils import movie_utils
 
 if __name__ == "__main__":
     # TESS

@@ -4,7 +4,7 @@ matplotlib.use('Agg')
 import pandas as pd
 import healpy as hp
 import matplotlib.pyplot as plt
-from .utils import movie_utils
+from mast_viz.utils import movie_utils
 
 if __name__ == "__main__":
     plt.interactive(False)
