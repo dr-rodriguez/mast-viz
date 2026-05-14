@@ -1,23 +1,30 @@
 # Read the HDF5 stores and generate frames for a movie
 import matplotlib
-matplotlib.use('Qt5Agg')  # avoids crashing MacOS Mojave
-import pandas as pd
+
+matplotlib.use("Agg")
 import healpy as hp
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from mast_viz.utils import movie_utils
 
 if __name__ == "__main__":
     plt.interactive(False)
 
     # JWST
-    print('Loading data...')
-    rootname = 'jwst'
-    movie_dir = 'movie/jwst/'
-    tstep = 1.
+    movie_dir = "movie/jwst/"
+    rootname = "jwst"
+    DPI = 100
+    HIGHLIGHTS = True
+    GALACTIC_LINE = False
+    GALACTIC_GRID = True
+    SKYCOLOR = "#003B4D"
+    tstep = 7.
 
-    df = pd.read_hdf('data/jwst.h5', 'data')
-    ptab = pd.read_hdf('data/jwst.h5', 'ptab')
-    base_map = hp.read_map('data/jwst_map.fits')
+    print("Loading data...")
+    df = pd.read_hdf("data/jwst.h5", "data")
+    ptab = pd.read_hdf("data/jwst.h5", "ptab")
+    base_map = hp.read_map("data/jwst_map.fits")
 
     movie_utils.generate_movie(
         df=df,
@@ -26,10 +33,10 @@ if __name__ == "__main__":
         rootname=rootname,
         movie_dir=movie_dir,
         tstep=tstep,
-        highlights=False,
-        galactic_line=True,
-        galactic_grid=True,
-        skycolor='midnightblue',
-        dpi=300,
-        resume=True
+        highlights=HIGHLIGHTS,
+        galactic_line=GALACTIC_LINE,
+        galactic_grid=GALACTIC_GRID,
+        skycolor=SKYCOLOR,
+        dpi=DPI,
+        resume=True,
     )
