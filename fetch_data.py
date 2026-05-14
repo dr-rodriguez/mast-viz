@@ -32,7 +32,7 @@ from db_connect import get_db_data
 
 # Default (currently set for HST)
 MISSION = "HST"
-CONSTRAINTS = "AND dataproduct_type='image' AND provenance_name!='HAP' "
+CONSTRAINTS = "AND dataproduct_type='image' AND provenance_name NOT IN ('HAP', 'HASP', 'HSLA') "
 
 QUERY_FRESH = True  # Set to True to bypass HDF5 cache and query the database
 DATA_DIR = "data"
@@ -88,6 +88,9 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
     if mission == "SDSS":
         bad_tmin = 40587  # 1970, this is a bug in the values
         df = df[df['t_min'] != bad_tmin]
+    elif mission == "HST":
+        # Remove data before 1990
+        df = df[df['t_min'] >= 48005.]
 
     # Save to HDF5 (always update cache when fetching fresh or if cache was missing)
     print(f"Saving data for {mission} to {h5_path}")

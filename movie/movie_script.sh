@@ -15,5 +15,8 @@
 # SDSS
 ~/Software/ffmpeg -r 20 -i ./sdss/sdss_frame%06d.png -vcodec mpeg4 -q:v 3 -y sdss.mp4
 
+# HST
+~/Software/ffmpeg -r 20 -i ./hst/hst_frame%06d.png -vcodec mpeg4 -q:v 3 -y hst.mp4
+
 # MAST
 ~/Software/ffmpeg -r 20 -i ./mast/mast_frame%06d.png -vcodec mpeg4 -q:v 3 -y mast.mp4

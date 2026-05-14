@@ -1,6 +1,6 @@
 # Read the HDF5 stores and generate frames for a movie
 import matplotlib
-matplotlib.use('Qt5Agg')  # avoids crashing MacOS Mojave
+matplotlib.use('Agg')
 import pandas as pd
 import healpy as hp
 import matplotlib.pyplot as plt
