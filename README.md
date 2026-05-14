@@ -20,7 +20,7 @@ cp .env.example .env
 
 # Updating Data
 
-Run individual lines in the script.py file to update the data.   
+Run individual lines in the fetch_data.py file to update the data.   
 Pending work is to split this into scripts for each mission and organize/document it better.
 
 # Generate Frames

@@ -150,7 +150,7 @@ def read_map(mapfile):
     return hp.read_map(mapfile)
 
 
-def make_plot(hp_map, outfile="mast_map.png", title="", dpi=600, grids=True):
+def make_plot(hp_map, outfile="mast_map.png", title="", dpi=300, grids=True):
     # Generate the map
 
     SKYCOLOR = '#003B4D'  # MAST darkest turquoise
