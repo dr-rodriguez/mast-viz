@@ -1,11 +1,16 @@
-movie/*
 .idea
 .vs
 .vscode
 __pycache__
-data/*
 odbc.ini
 .venv/
 .vscode/
 uv.lock
 .env
+
+# data
+data/*
+time_stats.csv
+
+# large output
+movie/*
