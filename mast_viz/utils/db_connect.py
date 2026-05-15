@@ -40,6 +40,8 @@ def get_db_data(mission="HST", constraints="", limit=None, run_chunks=False, num
             print("No data found for range.")
             return pd.DataFrame()
 
+        print(f"Querying obsid range: {min_id} to {max_id} ({max_id - min_id + 1} obsids)")
+
         step = (max_id - min_id) // num_chunks + 1
         dfs = []
         for i in range(num_chunks):
