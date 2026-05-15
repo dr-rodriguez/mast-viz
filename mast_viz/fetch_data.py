@@ -31,17 +31,23 @@ from mast_viz.mast_plot import make_plot, make_map, output_map, read_map
 # MISSION = "SDSS"
 # CONSTRAINTS = "AND dataproduct_type='image' "
 
+# MISSION = "HLSP"
+# CONSTRAINTS = ""
+
 # Default (currently set for HST)
 MISSION = "HST"
 CONSTRAINTS = "AND dataproduct_type='image' AND provenance_name NOT IN ('HAP', 'HASP', 'HSLA') "
 
 QUERY_FRESH = True  # Set to True to bypass HDF5 cache and query the database
 DATA_DIR = "data"
-MAKE_PLOTS = False
+MAKE_PLOTS = True
+RUN_CHUNKS = False
+NUM_CHUNKS = 20
+
 # -----------------------------
 
 
-def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_dir=None, make_plots=None):
+def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_dir=None, make_plots=None, run_chunks=None, num_chunks=None):
     """
     Fetch data for a specific mission from the database or HDF5 cache.
     
@@ -57,6 +63,10 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
         Directory for data files. Defaults to DATA_DIR variable.
     make_plots : bool, optional
         Whether to generate coverage plots. Defaults to MAKE_PLOTS variable.
+    run_chunks : bool, optional
+        Whether to run query in chunks. Defaults to RUN_CHUNKS variable.
+    num_chunks : int, optional
+        Number of chunks to use. Defaults to NUM_CHUNKS variable.
         
     Returns
     -------
@@ -69,6 +79,8 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
     query_fresh = query_fresh if query_fresh is not None else QUERY_FRESH
     data_dir = data_dir or DATA_DIR
     make_plots = make_plots if make_plots is not None else MAKE_PLOTS
+    run_chunks = run_chunks if run_chunks is not None else RUN_CHUNKS
+    num_chunks = num_chunks if num_chunks is not None else NUM_CHUNKS
     
     h5_path = os.path.join(data_dir, f"{mission.lower()}.h5")
     fits_path = os.path.join(data_dir, f"{mission.lower()}_map.fits")
@@ -85,6 +97,7 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
                 else:
                     print(f"'data' key not found in {h5_path}. Fetching from DB.")
                 
+                ptab = None
                 if 'ptab' in store:
                     ptab = store['ptab']
                     print(f"Loaded ptab for {mission} from cache.")
@@ -101,7 +114,7 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
     if df is None:
         # Fetch from database
         print(f"Fetching data for {mission} from database...")
-        df = get_db_data(mission=mission, constraints=constraints)
+        df = get_db_data(mission=mission, constraints=constraints, run_chunks=run_chunks, num_chunks=num_chunks)
         
         # Apply mission-specific post-processing if needed (matching script.py logic)
         if mission == "SDSS":
