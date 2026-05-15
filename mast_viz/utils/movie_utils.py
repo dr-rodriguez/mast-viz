@@ -137,6 +137,10 @@ def generate_movie(df, ptab, base_map, rootname, movie_dir,
         dpi (int): DPI for output images.
         resume (bool): Whether to attempt to resume from temporary state.
     """
+    # Ensure movie directory exists
+    if movie_dir:
+        os.makedirs(movie_dir, exist_ok=True)
+
     plt.style.use('dark_background')
     plt.rcParams.update({'font.size': 15})
     
