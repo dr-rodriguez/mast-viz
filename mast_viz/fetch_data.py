@@ -31,14 +31,15 @@ from mast_viz.utils.mast_plot import make_plot, make_map, output_map, read_map
 # MISSION = "SDSS"
 # CONSTRAINTS = "AND dataproduct_type='image' "
 
-# MISSION = "HLSP"
-# CONSTRAINTS = ""
+MISSION = "HLSP"
+CONSTRAINTS = ""
 
 # Default (currently set for HST)
-MISSION = "HST"
-CONSTRAINTS = "AND dataproduct_type='image' AND provenance_name NOT IN ('HAP', 'HASP', 'HSLA') "
+# MISSION = "HST"
+# CONSTRAINTS = "AND dataproduct_type='image' AND provenance_name NOT IN ('HAP', 'HASP', 'HSLA') "
 
-QUERY_FRESH = True  # Set to True to bypass HDF5 cache and query the database
+QUERY_FRESH = False  # Set to True to bypass HDF5 cache and query the database
+RESUME = True       # Set to True to resume from temporary CSV chunks
 DATA_DIR = "data"
 MAKE_PLOTS = True
 RUN_CHUNKS = False
@@ -47,7 +48,7 @@ NUM_CHUNKS = 20
 # -----------------------------
 
 
-def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_dir=None, make_plots=None, run_chunks=None, num_chunks=None):
+def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_dir=None, make_plots=None, run_chunks=None, num_chunks=None, resume=None):
     """
     Fetch data for a specific mission from the database or HDF5 cache.
     
@@ -67,6 +68,8 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
         Whether to run query in chunks. Defaults to RUN_CHUNKS variable.
     num_chunks : int, optional
         Number of chunks to use. Defaults to NUM_CHUNKS variable.
+    resume : bool, optional
+        Whether to resume from temporary CSV chunks. Defaults to RESUME variable.
         
     Returns
     -------
@@ -81,6 +84,7 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
     make_plots = make_plots if make_plots is not None else MAKE_PLOTS
     run_chunks = run_chunks if run_chunks is not None else RUN_CHUNKS
     num_chunks = num_chunks if num_chunks is not None else NUM_CHUNKS
+    resume = resume if resume is not None else RESUME
     
     h5_path = os.path.join(data_dir, f"{mission.lower()}.h5")
     fits_path = os.path.join(data_dir, f"{mission.lower()}_map.fits")
@@ -114,7 +118,7 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
     if df is None:
         # Fetch from database
         print(f"Fetching data for {mission} from database...")
-        df = get_db_data(mission=mission, constraints=constraints, run_chunks=run_chunks, num_chunks=num_chunks)
+        df = get_db_data(mission=mission, constraints=constraints, run_chunks=run_chunks, num_chunks=num_chunks, resume=resume)
         
         # Apply mission-specific post-processing if needed (matching script.py logic)
         if mission == "SDSS":
