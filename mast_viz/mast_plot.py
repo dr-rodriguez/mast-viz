@@ -80,8 +80,14 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
 
     ptab = []
     # ptab = np.zeros(len(df), dtype=[('np', 'i8'), ('ind', '%di8' % nind)])  # table to store healpix ids
+     
+    length = len(df)
 
     for i, row in df.iterrows():
+        # Print status every 10%
+        if i % (length // 10) == 0:
+            print(f"Progress: {i}/{length} ({i/length*100:.1f}%)")
+        
         if row["s_region"] is not None and row[exp_col] is not None:
             # Parse the footprint
             try:
