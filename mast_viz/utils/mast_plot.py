@@ -66,9 +66,48 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
 
     # number of pixels for that resolution
     npix = hp.nside2npix(nside)
-    hp_map = np.zeros(npix)
     resolution = hp.nside2resol(nside, arcmin=True)
     print(f"NSIDE={nside} NPIX={npix} Resolution(arcmin)={resolution}")
+
+    temp_hpmap_path = "data/temp_hpmap.csv"
+    temp_ptab_path = "data/temp_ptab.csv"
+    os.makedirs("data", exist_ok=True)
+
+    # Try to resume from temporary files
+    hp_map = None
+    ptab = []
+    processed_indices = set()
+
+    if os.path.exists(temp_hpmap_path) and os.path.exists(temp_ptab_path):
+        print("Temporary files found. Attempting to resume...")
+        try:
+            hp_map_df = pd.read_csv(temp_hpmap_path)
+            if len(hp_map_df) == npix:
+                hp_map = hp_map_df["value"].values.copy()
+                
+                ptab_df = pd.read_csv(temp_ptab_path)
+                if not ptab_df.empty:
+                    processed_indices = set(ptab_df["i"].values)
+                    ptab = ptab_df.to_dict("records")
+                    # Fix 'ind' column which is stored as string in CSV
+                    for d in ptab:
+                        if isinstance(d["ind"], str):
+                            # Remove brackets and split by space/newline
+                            s = d["ind"].strip("[]").replace("\n", " ")
+                            d["ind"] = np.fromstring(s, sep=" ", dtype=int)
+                    print(f"Resuming from row {len(processed_indices)}")
+                else:
+                    hp_map = np.zeros(npix)
+                    ptab = []
+            else:
+                print(f"Temp map size {len(hp_map_df)} does not match npix {npix}. Starting fresh.")
+        except Exception as e:
+            print(f"Error loading temporary files: {e}. Starting fresh.")
+
+    if hp_map is None:
+        hp_map = np.zeros(npix)
+        ptab = []
+        processed_indices = set()
 
     # I believe this is an estimate for how many HP-resolution elements there are in an area,
     # which for us is very variable. I'm using the TESS FFI size of just over 12 degrees
@@ -78,15 +117,20 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
     size_deg = 13  # largest area to consider, in degrees
     nind = int(size_deg**2 * np.pi / (resolution / 60) ** 2 * size_deg)
 
-    ptab = []
     # ptab = np.zeros(len(df), dtype=[('np', 'i8'), ('ind', '%di8' % nind)])  # table to store healpix ids
      
     length = len(df)
+    count = 0
 
     for i, row in df.iterrows():
+        if i in processed_indices:
+            continue
+
         # Print status every 10%
-        if i % (length // 10) == 0:
-            print(f"Progress: {i}/{length} ({i/length*100:.1f}%)")
+        if count % (length // 10 + 1) == 0:
+            print(f"Progress: {count}/{length} ({count/length*100:.1f}%)")
+        
+        count += 1
         
         if row["s_region"] is not None and row[exp_col] is not None:
             # Parse the footprint
@@ -133,13 +177,14 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
                 print("Unable to store indices for {}: {}".format(row["obs_id"], ipix))
                 continue
 
-            # if row['s_region'].startswith('CIRCLE'):
-            #     # Use circle approach (center + radius)
-            #
-            #     vec = hp.ang2vec(ra0, dec0, lonlat=True)  # healpix vector for position
-            #     ipix = hp.query_disc(nside, vec, radius)  # indices of all healpix pixels in a radius around vec
-            # else:
-            #     # Use polygon approach
+        # Periodically save state (every 1000 items)
+        if count % 1000 == 0:
+            pd.DataFrame({"value": hp_map}).to_csv(temp_hpmap_path, index=False)
+            pd.DataFrame(ptab).to_csv(temp_ptab_path, index=False)
+
+    # Save final state before returning
+    pd.DataFrame({"value": hp_map}).to_csv(temp_hpmap_path, index=False)
+    pd.DataFrame(ptab).to_csv(temp_ptab_path, index=False)
 
     pdf = pd.DataFrame(ptab)
 
