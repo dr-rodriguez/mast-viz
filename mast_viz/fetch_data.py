@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 from mast_viz.utils.db_connect import get_db_data
-from mast_viz.mast_plot import make_plot, make_map, output_map, read_map
+from mast_viz.utils.mast_plot import make_plot, make_map, output_map, read_map
 
 # --- MISSION CONFIGURATION ---
 # Tweak these variables for a single mission run. 
