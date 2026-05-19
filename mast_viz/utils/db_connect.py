@@ -2,7 +2,12 @@
 import pyodbc
 import pandas as pd
 import os
+import warnings
 from dotenv import load_dotenv
+
+# Suppress pandas warning for non-SQLAlchemy connection
+# TODO: Switch to SQLAlchemy engine for DB connection
+warnings.filterwarnings("ignore", category=UserWarning, message=".*pandas only supports SQLAlchemy connectable.*")
 
 # Load environment variables
 load_dotenv(".env", override=True)
@@ -10,9 +15,25 @@ MAST_DB_SERVER = os.getenv("MAST_DB_SERVER")
 MAST_DB_NAME = os.getenv("MAST_DB_NAME")
 
 
-def get_db_data(mission="HST", constraints="", limit=None, run_chunks=False, num_chunks=10):
+def get_db_data(mission="HST", constraints="", limit=None, run_chunks=False, num_chunks=10, resume=False):
     # Get the data from ObsPointing, return as pandas dataframe
     # Fields would be observationID, exposure time, wavelength range, s_region
+    temp_dir = "data/temp"
+    os.makedirs(temp_dir, exist_ok=True)
+
+    if resume:
+        print(f"Resuming from {temp_dir} for {mission}...")
+        csv_files = sorted([f for f in os.listdir(temp_dir) if f.startswith(f"{mission.lower()}_") and f.endswith(".csv")])
+        if csv_files:
+            dfs = []
+            for f in csv_files:
+                print(f"  Reading {f}...")
+                dfs.append(pd.read_csv(os.path.join(temp_dir, f)))
+            df = pd.concat(dfs, ignore_index=True)
+            print(f"Loaded {len(df)} rows from {len(csv_files)} files.")
+        else:
+            print("No temp files found. Fetching from DB.")
+            resume = False
 
     def build_sql(limit_val=None, extra_constraints=""):
         limit_string = f"TOP {limit_val}" if limit_val else ""
@@ -22,43 +43,53 @@ def get_db_data(mission="HST", constraints="", limit=None, run_chunks=False, num
             WHERE obs_collection='{mission}' AND t_exptime IS NOT NULL AND t_min IS NOT NULL AND s_region IS NOT NULL 
             {constraints} {extra_constraints}"""
 
-    print("Connecting to DB...")
-    conn = pyodbc.connect(dsn=MAST_DB_SERVER, database=MAST_DB_NAME, trusted_connection="yes", autocommit=True)
+    if not resume:
+        print("Connecting to DB...")
+        conn = pyodbc.connect(dsn=MAST_DB_SERVER, database=MAST_DB_NAME, trusted_connection="yes", autocommit=True)
 
-    if run_chunks:
-        print(f"Running in {num_chunks} chunks...")
-        range_sql = f"""SELECT MIN(obsid) as min_obsid, MAX(obsid) as max_obsid 
-        FROM ObsPointing WITH (NOLOCK) 
-        WHERE obs_collection='{mission}' 
-        AND t_exptime IS NOT NULL AND t_min IS NOT NULL AND s_region IS NOT NULL 
-        {constraints}"""
-        range_df = pd.read_sql(range_sql, conn)
-        min_id = range_df["min_obsid"].iloc[0]
-        max_id = range_df["max_obsid"].iloc[0]
+        if run_chunks:
+            print(f"Running in {num_chunks} chunks...")
+            range_sql = f"""SELECT MIN(obsid) as min_obsid, MAX(obsid) as max_obsid 
+            FROM ObsPointing WITH (NOLOCK) 
+            WHERE obs_collection='{mission}' 
+            AND t_exptime IS NOT NULL AND t_min IS NOT NULL AND s_region IS NOT NULL 
+            {constraints}"""
+            range_df = pd.read_sql(range_sql, conn)
+            min_id = range_df["min_obsid"].iloc[0]
+            max_id = range_df["max_obsid"].iloc[0]
 
-        if min_id is None or max_id is None:
-            print("No data found for range.")
-            return pd.DataFrame()
+            if min_id is None or max_id is None:
+                print("No data found for range.")
+                return pd.DataFrame()
 
-        print(f"Querying obsid range: {min_id} to {max_id} ({max_id - min_id + 1} obsids)")
+            print(f"Querying obsid range: {min_id} to {max_id} ({max_id - min_id + 1} obsids)")
 
-        step = (max_id - min_id) // num_chunks + 1
-        dfs = []
-        for i in range(num_chunks):
-            start = min_id + i * step
-            end = start + step - 1
-            if i == num_chunks - 1:
-                end = max_id
+            step = (max_id - min_id) // num_chunks + 1
+            for i in range(num_chunks):
+                start = min_id + i * step
+                end = start + step - 1
+                if i == num_chunks - 1:
+                    end = max_id
+                
+                print(f"  Fetching Chunk {i+1}/{num_chunks}: obsid {start} to {end}")
+                chunk_sql = build_sql(limit, f"AND obsid BETWEEN {start} AND {end}")
+                chunk_df = pd.read_sql(chunk_sql, conn)
+                
+                chunk_file = os.path.join(temp_dir, f"{mission.lower()}_{i}.csv")
+                chunk_df.to_csv(chunk_file, index=False)
             
-            print(f"  Chunk {i+1}/{num_chunks}: obsid {start} to {end}")
-            chunk_sql = build_sql(limit, f"AND obsid BETWEEN {start} AND {end}")
-            dfs.append(pd.read_sql(chunk_sql, conn))
-        
-        df = pd.concat(dfs, ignore_index=True)
-    else:
-        print("Running single query...")
-        sql = build_sql(limit)
-        df = pd.read_sql(sql, conn)
+            print("Reading chunks from disk...")
+            dfs = []
+            for i in range(num_chunks):
+                chunk_file = os.path.join(temp_dir, f"{mission.lower()}_{i}.csv")
+                print(f"  Reading {chunk_file}...")
+                dfs.append(pd.read_csv(chunk_file))
+            
+            df = pd.concat(dfs, ignore_index=True)
+        else:
+            print("Running single query...")
+            sql = build_sql(limit)
+            df = pd.read_sql(sql, conn)
 
     # Sort by t_min
     print("Sorting by t_min...")
