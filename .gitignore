@@ -130,6 +130,9 @@ dmypy.json
 .vscode/
 *.code-workspace
 
+# Agents
+.cursor/
+
 # data
 data/*
 time_stats.csv
