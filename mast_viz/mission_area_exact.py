@@ -31,10 +31,12 @@ import numpy as np
 import pandas as pd
 from mocpy import MOC
 
+# Full-sky area constants used to convert MOC sky_fraction to deg^2 and sr.
 FULL_SKY_DEG2 = 4.0 * np.pi * (180.0 / np.pi) ** 2
 FULL_SKY_SR = 4.0 * np.pi
 
 DEFAULT_ORDER = 16
+# Per-mission HEALPix order defaults: tuned to footprint angular scale.
 MISSION_ORDER: dict[str, int] = {
     "hst": 18,
     "jwst": 18,
@@ -92,6 +94,7 @@ def parse_regions(
     n_unsupported
         Count of rows that could not be parsed.
     """
+    # Polygons grouped by vertex count (mocpy requires uniform polygons per batch).
     poly_groups: dict[int, list[tuple[np.ndarray, np.ndarray]]] = defaultdict(list)
     cone_lons: list[float] = []
     cone_lats: list[float] = []
@@ -106,12 +109,14 @@ def parse_regions(
         if isinstance(reg, bytes):
             reg = reg.decode()
 
+        # Split STC-S into tokens; first token is shape type (POLYGON/CIRCLE).
         toks = str(reg).strip().split()
         if not toks:
             n_unsupported += 1
             continue
 
         head = toks[0].upper()
+        # Extract numeric coordinates only; skip labels like ICRS.
         nums: list[float] = []
         for token in toks[1:]:
             try:
@@ -124,11 +129,13 @@ def parse_regions(
                 n_unsupported += 1
                 continue
             arr = np.asarray(nums)
+            # Interleaved lon/lat pairs; normalize lon to [0, 360) for mocpy.
             lon = arr[0::2] % 360.0
             lat = arr[1::2]
             if len(lon) != len(lat) or len(lon) < 3:
                 n_unsupported += 1
                 continue
+            # Drop repeated closing vertex when first == last.
             if (
                 abs(lon[0] - lon[-1]) < 1e-9
                 and abs(lat[0] - lat[-1]) < 1e-9
@@ -143,10 +150,12 @@ def parse_regions(
             if len(nums) < 3:
                 n_unsupported += 1
                 continue
+            # Center lon/lat and radius in degrees (exact circles, not polygons).
             cone_lons.append(nums[0] % 360.0)
             cone_lats.append(nums[1])
             cone_radii.append(nums[2])
         else:
+            # RANGE, UNION, malformed rows, etc.
             n_unsupported += 1
 
     cones = None
@@ -174,6 +183,7 @@ def _union_chunked(mocs: list[MOC], chunk_size: int) -> MOC | None:
     if not mocs:
         return None
 
+    # Union footprints in batches, then union the batch results.
     chunk_results: list[MOC] = []
     for start in range(0, len(mocs), chunk_size):
         batch = mocs[start : start + chunk_size]
@@ -204,16 +214,20 @@ def build_moc(
             file=sys.stderr,
         )
 
+    # Step 1: convert each polygon group to individual footprint MOCs.
     for n_vertices, items in sorted(poly_groups.items()):
         flat: list[np.ndarray] = []
         for lon, lat in items:
             flat.append(lon)
             flat.append(lat)
+        # One MOC per polygon; all polygons in this group share vertex count.
         group_mocs = MOC.from_polygons(
             np.array(flat, dtype=np.float64),
             max_depth=order,
         )
         pending.extend(group_mocs)
+
+        # Step 2: periodically union pending footprints into the running MOC.
         if len(pending) >= chunk_size:
             chunk_moc = _union_chunked(pending, chunk_size)
             if chunk_moc is not None:
@@ -222,11 +236,13 @@ def build_moc(
                 )
             pending = []
 
+    # Union any remaining polygon MOCs not yet folded into running.
     if pending:
         chunk_moc = _union_chunked(pending, chunk_size)
         if chunk_moc is not None:
             running = chunk_moc if running is None else running.union(chunk_moc)
 
+    # Step 3: add circle footprints (e.g. GALEX) as exact cones, not polygons.
     if cones is not None:
         lon, lat, radius = cones
         if progress:
@@ -307,9 +323,11 @@ def mission_area_exact(
         order = default_order(mission_key)
 
     cache_path = moc_cache_path(data_dir, mission_key, order)
+    # Caching only applies to the full dataset (min_exptime == 0).
     can_cache = use_cache and min_exptime <= 0.0
     cached = False
 
+    # Fast path: load precomputed MOC if cache is valid and not forced to rebuild.
     if can_cache and not recompute and is_cache_valid(cache_path, h5_path):
         if progress:
             print(f"Loading cached MOC from {cache_path}...", file=sys.stderr)
@@ -319,6 +337,7 @@ def mission_area_exact(
         n_used = 0
         n_unsupported = 0
     else:
+        # Slow path: read observations and build MOC from s_region footprints.
         if progress:
             print(f"Reading {h5_path}...", file=sys.stderr)
         df = pd.read_hdf(h5_path, "data")
@@ -352,6 +371,7 @@ def mission_area_exact(
             moc.save(cache_path, format="fits", overwrite=True)
             cached = True
 
+    # Derive area from MOC sky_fraction (unique sky covered, overlaps removed).
     cell_deg2 = hp.nside2pixarea(2 ** order, degrees=True)
     n_cells, area_deg2, area_sr, sky_fraction = _stats_from_moc(moc, order)
 
@@ -553,6 +573,7 @@ def main(argv: list[str] | None = None) -> int:
         print(format_all_results(results, show_cells=args.cells))
         return 0
 
+    # Single mission: compute exact area, optionally compare to map-based estimate.
     result = mission_area_exact(
         args.mission,
         data_dir=args.data_dir,
