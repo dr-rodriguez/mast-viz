@@ -8,6 +8,13 @@ quantizes to nside=256 and counts intersecting pixels.
 Per-mission default orders (override with --order):
   hst/jwst: 18, sdss/galex/hlsp: 16, ps1/kepler: 14, tess: 11
 
+HEALPix cell area at each order (nside = 2^order; see ORDER_CELL_DEG2 below):
+  order 11 (tess):      ~8.20e-4 deg^2 (~2.9 arcmin)
+  order 14 (ps1, ...):  ~1.28e-5 deg^2 (~0.36 arcmin)
+  order 16 (sdss, ...): ~8.00e-7 deg^2 (~0.09 arcmin)
+  order 18 (hst, jwst): ~5.00e-8 deg^2 (~0.02 arcmin)
+  order 8 (mission_area.py nside=256): ~0.0525 deg^2 (~11.5 arcmin)
+
 TESS and PS1 use shallow orders because their footprints span degrees; deep orders
 are prohibitively slow and unnecessary for boundary accuracy on large tiles.
 
@@ -46,6 +53,16 @@ MISSION_ORDER: dict[str, int] = {
     "ps1": 14,
     "kepler": 14,
     "tess": 11,
+}
+
+# HEALPix cell area (deg^2) at each order used above (nside = 2^order).
+# MOC boundary error is roughly one cell width along each footprint edge.
+# mission_area.py uses nside=256 (order 8), ~1000x coarser than hst/jwst order 18.
+MAP_BASED_ORDER = 8  # nside=256 in mission_area.py / make_map
+_ORDER_REFERENCE_ORDERS = frozenset(MISSION_ORDER.values()) | {DEFAULT_ORDER, MAP_BASED_ORDER}
+ORDER_CELL_DEG2: dict[int, float] = {
+    order: hp.nside2pixarea(2 ** order, degrees=True)
+    for order in _ORDER_REFERENCE_ORDERS
 }
 
 
