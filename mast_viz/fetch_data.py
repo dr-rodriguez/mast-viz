@@ -31,8 +31,11 @@ from mast_viz.utils.mast_plot import make_plot, make_map, output_map, read_map
 # MISSION = "SDSS"
 # CONSTRAINTS = "AND dataproduct_type='image' "
 
-MISSION = "HLSP"
-CONSTRAINTS = ""
+# MISSION = "HLSP"
+# CONSTRAINTS = ""
+
+MISSION = "ROMAN"
+CONSTRAINTS = "AND dataproduct_type='image'"
 
 # Default (currently set for HST)
 # MISSION = "HST"
@@ -127,10 +130,12 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
         elif mission == "HST":
             # Remove data before 1990
             df = df[df['t_min'] >= 48005.]
+        
+        print(f"Unique missions: {df['obs_collection'].unique().tolist()}")
 
         # Generate HEALPix map and pixel table (ptab)
         print(f"Generating map and ptab for {mission}...")
-        hp_map, ptab = make_map(df)
+        hp_map, ptab = make_map(df, mission=mission)
 
         # Save to HDF5 (always update cache when fetching fresh or if cache was missing)
         print(f"Saving data and ptab for {mission} to {h5_path}")
@@ -149,7 +154,7 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
         # df was loaded from cache. Check if ptab and fits map also exist.
         if ptab is None or hp_map is None:
              print(f"Map or ptab missing from cache for {mission}, generating...")
-             hp_map, ptab = make_map(df)
+             hp_map, ptab = make_map(df, mission=mission)
              try:
                  with pd.HDFStore(h5_path, mode='a') as store:
                      store["ptab"] = ptab
@@ -163,7 +168,7 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
             if os.path.exists(fits_path):
                 hp_map = read_map(fits_path)
             else:
-                hp_map, _ = make_map(df)
+                hp_map, _ = make_map(df, mission=mission)
         
         plot_path = os.path.join("image", f"mast_{mission.lower()}_map.png")
         os.makedirs("image", exist_ok=True)

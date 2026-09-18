@@ -43,7 +43,20 @@ def read_file_data(datafile="data.fits", fmt="table"):
         return t.to_pandas()
 
 
-def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
+def _resume_paths(mission=None):
+    """
+    Return HEALPix resume file paths and a log label.
+
+    When mission is omitted, use shared cross-mission temp files.
+    """
+    os.makedirs("data", exist_ok=True)
+    if mission is None:
+        return "data/temp_hpmap.csv", "data/temp_ptab.csv", "cross-mission"
+    tag = mission.lower()
+    return f"data/temp_{tag}_hpmap.csv", f"data/temp_{tag}_ptab.csv", mission
+
+
+def make_map(df, nside=256, exp_col="t_exptime", verbose=False, mission=None):
     """
     Make Healpix map
 
@@ -55,6 +68,10 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
         HEALPix resolution
     exp_col
         Exposure column name
+    mission
+        Mission name for mission-specific resume files. When omitted, resume
+        state is stored in shared ``data/temp_hpmap.csv`` and
+        ``data/temp_ptab.csv`` for cross-mission maps.
 
     Returns
     -------
@@ -63,15 +80,12 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
     ptab
         HEALPix pixel values for the provided dataframe
     """
+    temp_hpmap_path, temp_ptab_path, resume_label = _resume_paths(mission=mission)
 
     # number of pixels for that resolution
     npix = hp.nside2npix(nside)
     resolution = hp.nside2resol(nside, arcmin=True)
     print(f"NSIDE={nside} NPIX={npix} Resolution(arcmin)={resolution}")
-
-    temp_hpmap_path = "data/temp_hpmap.csv"
-    temp_ptab_path = "data/temp_ptab.csv"
-    os.makedirs("data", exist_ok=True)
 
     # Try to resume from temporary files
     hp_map = None
@@ -79,7 +93,7 @@ def make_map(df, nside=256, exp_col="t_exptime", verbose=False):
     processed_indices = set()
 
     if os.path.exists(temp_hpmap_path) and os.path.exists(temp_ptab_path):
-        print("Temporary files found. Attempting to resume...")
+        print(f"Temporary files found for {resume_label}. Attempting to resume...")
         try:
             hp_map_df = pd.read_csv(temp_hpmap_path)
             if len(hp_map_df) == npix:
