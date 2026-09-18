@@ -35,7 +35,7 @@ from mast_viz.utils.mast_plot import make_plot, make_map, output_map, read_map
 # CONSTRAINTS = ""
 
 MISSION = "ROMAN"
-CONSTRAINTS = "AND dataproduct_type='image'"
+CONSTRAINTS = ""
 
 # Default (currently set for HST)
 # MISSION = "HST"
@@ -47,11 +47,12 @@ DATA_DIR = "data"
 MAKE_PLOTS = True
 RUN_CHUNKS = False
 NUM_CHUNKS = 20
+GRID_LABELS = True
 
 # -----------------------------
 
 
-def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_dir=None, make_plots=None, run_chunks=None, num_chunks=None, resume=None):
+def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_dir=None, make_plots=None, run_chunks=None, num_chunks=None, resume=None, grid_labels=None):
     """
     Fetch data for a specific mission from the database or HDF5 cache.
     
@@ -73,7 +74,8 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
         Number of chunks to use. Defaults to NUM_CHUNKS variable.
     resume : bool, optional
         Whether to resume from temporary CSV chunks. Defaults to RESUME variable.
-        
+    grid_labels : bool, optional
+        Whether to add grid labels to the plot. Defaults to GRID_LABELS variable.
     Returns
     -------
     pd.DataFrame
@@ -88,7 +90,8 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
     run_chunks = run_chunks if run_chunks is not None else RUN_CHUNKS
     num_chunks = num_chunks if num_chunks is not None else NUM_CHUNKS
     resume = resume if resume is not None else RESUME
-    
+    grid_labels = grid_labels if grid_labels is not None else GRID_LABELS
+
     h5_path = os.path.join(data_dir, f"{mission.lower()}.h5")
     fits_path = os.path.join(data_dir, f"{mission.lower()}_map.fits")
     df = None
@@ -172,7 +175,7 @@ def fetch_mission_data(mission=None, constraints=None, query_fresh=None, data_di
         
         plot_path = os.path.join("image", f"mast_{mission.lower()}_map.png")
         os.makedirs("image", exist_ok=True)
-        make_plot(hp_map, outfile=plot_path, title=mission)
+        make_plot(hp_map, outfile=plot_path, title=mission, grid_labels=grid_labels)
             
     return df
 

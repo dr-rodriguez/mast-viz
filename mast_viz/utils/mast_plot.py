@@ -9,6 +9,7 @@ import os
 from astropy.table import Table
 from matplotlib import cm
 import copy
+import healpy.rotator as R
 from mast_viz.utils.utils import parse_s_region, get_polygon_cdshealpix
 
 plt.interactive(False)
@@ -215,7 +216,77 @@ def read_map(mapfile):
     return hp.read_map(mapfile)
 
 
-def make_plot(hp_map, outfile="mast_map.png", title="", dpi=300, grids=True):
+def _project_lonlat(ax, lon, lat, coord="C"):
+    """Project lon/lat to axes coordinates if the point lies in the plot area."""
+    vec = R.dir2vec(lon, lat, lonlat=True)
+    vec = R.Rotator(coord=ax.proj.mkcoord(coord=coord)[::-1]).I(vec)
+    x, y = ax.proj.vec2xy(vec, direct=False)
+    if not np.isfinite(x) or not np.isfinite(y):
+        return None
+
+    xmin, xmax = ax.get_xlim()
+    ymin, ymax = ax.get_ylim()
+    pad = 0.03 * max(xmax - xmin, ymax - ymin)
+    if x < xmin + pad or x > xmax - pad or y < ymin + pad or y > ymax - pad:
+        return None
+    return float(x), float(y)
+
+
+def _add_graticule_labels(ax, dpar=45.0, dmer=30.0, coord="C", fontsize=8, color="white"):
+    """Add small RA/Dec labels on visible major graticule lines."""
+    for ra in np.arange(0.0, 360.0, dmer):
+        if _project_lonlat(ax, ra, 0.0, coord=coord) is not None:
+            ax.projtext(
+                ra,
+                0.0,
+                f"{int(ra)}°",
+                lonlat=True,
+                coord=coord,
+                color=color,
+                fontsize=fontsize,
+                ha="center",
+                va="bottom",
+            )
+
+    for dec in np.arange(-90.0 + dpar, 90.0, dpar):
+        if abs(dec) < 1e-9:
+            continue
+
+        best_ra = None
+        best_score = None
+        for ra in np.linspace(0.0, 360.0, 144, endpoint=False):
+            xy = _project_lonlat(ax, ra, dec, coord=coord)
+            if xy is None:
+                continue
+            score = abs(xy[0])
+            if best_score is None or score > best_score:
+                best_score = score
+                best_ra = ra
+
+        if best_ra is not None:
+            dec_label = f"+{int(dec)}°" if dec > 0 else f"{int(dec)}°"
+            ax.projtext(
+                best_ra,
+                dec,
+                dec_label,
+                lonlat=True,
+                coord=coord,
+                color=color,
+                fontsize=fontsize,
+                ha="center",
+                va="center",
+            )
+
+
+def make_plot(
+    hp_map,
+    outfile="mast_map.png",
+    title="",
+    dpi=300,
+    grids=True,
+    grid_labels=False,
+    grid_label_fontsize=8,
+):
     # Generate the map
 
     SKYCOLOR = '#003B4D'  # MAST darkest turquoise
@@ -253,6 +324,15 @@ def make_plot(hp_map, outfile="mast_map.png", title="", dpi=300, grids=True):
     if grids:
         hp.projplot(lon, lat, "r", lonlat=True, coord="G")
         hp.graticule(dpar=45.0, dmer=30.0, coord="C", color="white")
+        if grid_labels:
+            _add_graticule_labels(
+                plt.gca(),
+                dpar=45.0,
+                dmer=30.0,
+                coord="C",
+                fontsize=grid_label_fontsize,
+                color="white",
+            )
 
     plt.savefig(pngfile2, dpi=dpi)
 
